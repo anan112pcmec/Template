@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// Handle Post Request
+
 func PostHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("PostHandler dijalankan...")

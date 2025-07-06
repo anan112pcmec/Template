@@ -12,7 +12,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/anan112pcmec/gomodultem/app/middleware"
+	"github.com/anan112pcmec/Template/app/middleware"
+
 )
 
 type Server struct {
@@ -25,7 +26,7 @@ type Appsetting struct {
 }
 
 type Dataconfig struct {
-	dbHost, dbUser, dbPass, dbPort string
+	dbHost, dbUser, dbPass, dbName, dbPort string
 }
 
 func enableCORS(next http.Handler) http.Handler {
@@ -49,13 +50,14 @@ func (server *Server) initialize(appconfig Appsetting) {
 		dbHost: getenvi("DBHOST", "localhost"),
 		dbUser: getenvi("DBUSER", "postgres"),
 		dbPass: getenvi("DBPASS", "Faiz"),
+		dbName: getenvi("DBNAME", "perpustakaan"),
 		dbPort: getenvi("DBPORT", "8082"),
 	}
 
 	var err error
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=perpustakaanfaiz port=%s sslmode=disable TimeZone=Asia/Jakarta",
-		dbConfig.dbHost, dbConfig.dbUser, dbConfig.dbPass, dbConfig.dbPort,
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta",
+		dbConfig.dbHost, dbConfig.dbUser, dbConfig.dbPass, dbConfig.dbName, dbConfig.dbPort,
 	)
 
 	fmt.Println("DSN yang digunakan:", dsn)
@@ -65,7 +67,7 @@ func (server *Server) initialize(appconfig Appsetting) {
 	if err != nil {
 		panic("Server Gagal Menyambungkan ke database")
 	} else {
-		fmt.Println("Berhasil terhubung ke database:", "kasir_go")
+		fmt.Println("Berhasil terhubung ke database:", getenvi("DBNAME", "DBMU"))
 		fmt.Println("DB_NAME dari .env:", os.Getenv("DB_NAME"))
 	}
 
@@ -78,9 +80,10 @@ func (server *Server) initialize(appconfig Appsetting) {
 		w.Write([]byte("Halo dari " + appconfig.AppName))
 	})
 
-	// ⏬ Ganti handler manual dengan handler dari package middleware ⏬
 	server.Router.Handle("/endpoint.go", middleware.PostHandler(server.DB)).Methods("POST", "OPTIONS")
 	server.Router.Handle("/endpoint.go", middleware.GetHandler()).Methods("GET")
+	server.Router.HandleFunc("/ws", middleware.HandleWebSocket)
+
 }
 
 func (server *Server) Run(alamat string) {

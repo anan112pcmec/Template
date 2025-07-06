@@ -1,6 +1,6 @@
 package main
 
-import "github.com/anan112pcmec/gomodultem/app"
+import "github.com/anan112pcmec/Template/app"
 
 func main() {
 	app.Run()

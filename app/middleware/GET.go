@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+// Handle Get Request
+
 func GetHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("GetHandler dijalankan...")
