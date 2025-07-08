@@ -43,7 +43,7 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		log.Printf("📩 Data diterima: Tujuan=%v, Nama=%s, Pw=%s", reqData.Tujuan, reqData.Nama, reqData.Pw)
+		log.Printf(" Data diterima: Tujuan=%v, Nama=%s, Pw=%s", reqData.Tujuan, reqData.Nama, reqData.Pw)
 
 		// Kirim respons balik (opsional)
 		response := map[string]string{
