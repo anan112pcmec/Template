@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/anan112pcmec/Template/app/middleware"
+
 )
 
 type Server struct {
@@ -64,7 +66,20 @@ func getLimiter(ip string) *rate.Limiter {
 
 	cl, exists := clients[ip]
 	if !exists {
-		limiter := rate.NewLimiter(5, 100) // rate 5 req/detik, burst 100
+		reqLimitStr := getenvi("REQ_LIMIT", "5")
+		burstLimitStr := getenvi("BURST_LIMIT", "100")
+
+		reqLimitFloat, err := strconv.ParseFloat(reqLimitStr, 64)
+		if err != nil {
+			reqLimitFloat = 5
+		}
+
+		burstLimitInt, err := strconv.Atoi(burstLimitStr)
+		if err != nil {
+			burstLimitInt = 100
+		}
+
+		limiter := rate.NewLimiter(rate.Limit(reqLimitFloat), burstLimitInt)
 		clients[ip] = &clientLimiter{
 			limiter:  limiter,
 			lastSeen: time.Now(),
