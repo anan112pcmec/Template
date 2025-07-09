@@ -1,11 +1,14 @@
 package app
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"sync"
 	"time"
@@ -18,7 +21,6 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/anan112pcmec/Template/app/middleware"
-
 )
 
 type Server struct {
@@ -59,6 +61,37 @@ var (
 	muClients sync.Mutex
 )
 
+var (
+	blockedIPs   = make(map[string]time.Time)
+	muBlockedIPs sync.Mutex
+)
+
+type ipRequestInfo struct {
+	count     int
+	firstSeen time.Time
+}
+
+var (
+	ipRequests   = make(map[string]*ipRequestInfo)
+	muIpRequests sync.Mutex
+)
+
+func isBlocked(ip string) bool {
+	muBlockedIPs.Lock()
+	defer muBlockedIPs.Unlock()
+
+	unblockTime, blocked := blockedIPs[ip]
+	if !blocked {
+		return false
+	}
+
+	if time.Now().After(unblockTime) {
+		delete(blockedIPs, ip) // unblock jika waktu sudah lewat
+		return false
+	}
+	return true
+}
+
 // Mendapatkan limiter untuk IP tertentu
 func getLimiter(ip string) *rate.Limiter {
 	muClients.Lock()
@@ -92,7 +125,6 @@ func getLimiter(ip string) *rate.Limiter {
 	return cl.limiter
 }
 
-// Cleanup clients yang sudah lama tidak aktif (misal > 5 menit)
 func cleanupClients() {
 	for {
 		time.Sleep(time.Minute)
@@ -115,21 +147,143 @@ func rateLimitMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		limiter := getLimiter(ip)
-		if !limiter.Allow() {
+		if isBlocked(ip) {
+			fmt.Printf(" IP %s mencoba request saat masih diblokir\n", ip)
+			return
+		}
 
-			if r.Method == http.MethodPost {
-				fmt.Println("🚨 Terjadi serangan ke POST:", r.URL.Path)
-			} else if r.Method == http.MethodGet {
-				fmt.Println("🚨 Terjadi serangan ke GET:", r.URL.Path)
-			} else if r.URL.Path == "/ws" {
-				fmt.Println("🚨 Terjadi serangan ke WebSocket")
+		muIpRequests.Lock()
+		reqInfo, exists := ipRequests[ip]
+		if !exists {
+			reqInfo = &ipRequestInfo{count: 1, firstSeen: time.Now()}
+			ipRequests[ip] = reqInfo
+		} else {
+			// Reset jika lebih dari 10 detik
+			if time.Since(reqInfo.firstSeen) > 10*time.Second {
+				reqInfo.count = 1
+				reqInfo.firstSeen = time.Now()
 			} else {
-				fmt.Println("🚨 Terjadi serangan ke", r.Method, "pada", r.URL.Path)
+				reqInfo.count++
 			}
 
-			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+			// Jika melebihi 150, blokir selama 5 menit
+			if reqInfo.count > 150 {
+				muBlockedIPs.Lock()
+				blockedIPs[ip] = time.Now().Add(5 * time.Minute)
+				muBlockedIPs.Unlock()
+
+				delete(ipRequests, ip) // reset counter setelah blok
+				muIpRequests.Unlock()
+
+				fmt.Printf("🚫 IP %s diblokir karena mengirim %d request dalam 10 detik\n", ip, reqInfo.count)
+				http.Error(w, "Terlalu banyak request. Anda diblokir selama 5 menit.", http.StatusTooManyRequests)
+				return
+			}
+		}
+		muIpRequests.Unlock()
+
+		// Rate limiter biasa
+		limiter := getLimiter(ip)
+		if !limiter.Allow() {
+			http.Error(w, "Rate limit terlampaui", http.StatusTooManyRequests)
 			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Fungsi cek apakah IP sedang diblokir
+
+// Fungsi untuk blokir IP selama durasi tertentu
+func blockIP(ip string, duration time.Duration) {
+	muBlockedIPs.Lock()
+	defer muBlockedIPs.Unlock()
+	blockedIPs[ip] = time.Now().Add(duration)
+	fmt.Printf("🚫 IP %s diblokir selama %v karena request mencurigakan\n", ip, duration)
+}
+
+func blockBadRequestsMiddleware(next http.Handler) http.Handler {
+	// Regex pola umum serangan SQLi, XSS, Path Traversal, Command Injection
+	patterns := []string{
+		`(?i)\b(or|and)\b\s+\d+=\d+`, // or 1=1, and 2=2
+		`(?i)union\s+select`,         // UNION SELECT
+		`(?i)drop\s+table`,           // DROP TABLE
+		`(?i)insert\s+into`,          // INSERT INTO
+		`(?i)select\s+.+\s+from`,     // SELECT ... FROM
+		`(?i)';--`,                   // Comment injection
+		`(?i)sleep\(\d+\)`,           // sleep(10)
+
+		// XSS
+		"(?i)<script> .............</script>", // <script> ... </script>
+
+		// Command Injection
+		`(?i)(wget|curl|exec)\s`,
+	}
+
+	// Compile all regex
+	var compiledPatterns []*regexp.Regexp
+	for _, p := range patterns {
+		re := regexp.MustCompile(p)
+		compiledPatterns = append(compiledPatterns, re)
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr // fallback kalau SplitHostPort gagal
+		}
+
+		// Cek dulu apakah IP diblokir
+		if isBlocked(ip) {
+			// Silent drop atau kasih response
+			http.Error(w, "Forbidden: IP diblokir sementara karena request mencurigakan", http.StatusForbidden)
+			return
+		}
+
+		// Fungsi helper untuk cek string dengan semua pola
+		checkPatterns := func(text string) bool {
+			for _, re := range compiledPatterns {
+				if re.MatchString(text) {
+					return true
+				}
+			}
+			return false
+		}
+
+		// Cek URL raw string
+		if checkPatterns(r.URL.RawQuery) || checkPatterns(r.URL.Path) {
+			blockIP(ip, 10*time.Minute)
+			http.Error(w, "Forbidden: Request mengandung pola berbahaya", http.StatusForbidden)
+			return
+		}
+
+		// Cek header tertentu (User-Agent, Referer, Cookie)
+		headersToCheck := []string{"User-Agent", "Referer", "Cookie"}
+		for _, h := range headersToCheck {
+			if checkPatterns(r.Header.Get(h)) {
+				blockIP(ip, 10*time.Minute)
+				http.Error(w, "Forbidden: Request mengandung pola berbahaya", http.StatusForbidden)
+				return
+			}
+		}
+
+		// Cek body jika method POST/PUT/PATCH
+		if r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH" {
+			if r.Body != nil {
+				// Baca body tanpa menghilangkan data untuk handler selanjutnya
+				bodyBytes, err := io.ReadAll(r.Body)
+				if err == nil {
+					bodyStr := string(bodyBytes)
+					if checkPatterns(bodyStr) {
+						blockIP(ip, 10*time.Minute)
+						http.Error(w, "Forbidden: Request mengandung pola berbahaya", http.StatusForbidden)
+						return
+					}
+					// Reset body agar bisa dibaca ulang oleh handler
+					r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+				}
+			}
 		}
 
 		next.ServeHTTP(w, r)
@@ -141,13 +295,10 @@ func (server *Server) initialize(appconfig Appsetting) {
 
 	server.Router = mux.NewRouter()
 
-	// Middleware CORS
+	server.Router.Use(blockBadRequestsMiddleware)
 	server.Router.Use(enableCORS)
-
-	// Middleware rate limiter global
 	server.Router.Use(rateLimitMiddleware)
 
-	// Jalankan cleanup client limiter di background
 	go cleanupClients()
 
 	var dbConfig = Dataconfig{

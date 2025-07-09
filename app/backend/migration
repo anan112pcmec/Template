@@ -1,0 +1,23 @@
+package migration
+
+import (
+	"fmt"
+	"log"
+
+	"gorm.io/gorm"
+
+	"github.com/anan112pcmec/Template/app/models"
+)
+
+func MigrateAuto(db *gorm.DB) {
+	fmt.Println("Starting database migration...")
+
+	err := db.AutoMigrate(
+		&models.User{},
+	)
+	if err != nil {
+		log.Fatalf("Migration failed: %v", err)
+	}
+
+	fmt.Println("Migration finished successfully.")
+}
