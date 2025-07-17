@@ -21,6 +21,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/anan112pcmec/Template/app/middleware"
+	"github.com/anan112pcmec/Template/app/serviceadmin"
 )
 
 type Server struct {
@@ -330,13 +331,28 @@ func (server *Server) initialize(appconfig Appsetting) {
 	server.DB.Raw("SELECT current_database();").Scan(&currentDB)
 	fmt.Println("Database yang sedang digunakan:", currentDB)
 
+	err = server.DB.AutoMigrate(&serviceadmin.BukuInduk{}) // sesuaikan dengan path struct kamu
+	if err != nil {
+		log.Fatalf("Gagal migrasi BukuInduk: %v", err)
+	} else {
+		fmt.Println("Migrasi BukuInduk berhasil")
+	}
+
+	err1 := server.DB.AutoMigrate(&serviceadmin.BukuChild{}) // sesuaikan dengan path struct kamu
+	if err1 != nil {
+		log.Fatalf("Gagal migrasi BukuInduk: %v", err1)
+	} else {
+		fmt.Println("Migrasi BukuInduk berhasil")
+	}
+
 	server.Router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Halo dari " + appconfig.AppName))
 	})
 
-	server.Router.Handle("/endpoint.go", middleware.PostHandler(server.DB)).Methods("POST", "OPTIONS")
+	server.Router.Handle("/admin", middleware.BodyReaderMiddleware(middleware.AdminHandler(server.DB)))
 	server.Router.Handle("/endpoint.go", middleware.GetHandler()).Methods("GET")
 	server.Router.HandleFunc("/ws", middleware.HandleWebSocket)
+
 }
 
 func (server *Server) Run(alamat string) {
