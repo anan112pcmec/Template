@@ -12,7 +12,7 @@ func AmbilBukuAll(db *gorm.DB) []map[string]interface{} {
 	var hasil []map[string]interface{}
 
 	// Ambil semua data dari tabel buku_induks
-	if err := db.Table("buku_induks").Find(&bukuList).Error; err != nil {
+	if err := db.Unscoped().Table("buku_induks").Find(&bukuList).Error; err != nil {
 		fmt.Println("[ERROR] Gagal ambil data buku:", err)
 		return nil
 	}
