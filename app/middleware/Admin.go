@@ -1,42 +1,14 @@
 package middleware
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"gorm.io/gorm"
 
 	"github.com/anan112pcmec/Template/app/serviceadmin"
 )
-
-// ============================
-// Middleware untuk baca body
-// ============================
-
-type ctxKey string
-
-const BodyKey ctxKey = "bodyBytes"
-
-func BodyReaderMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		bodyBytes, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Gagal membaca body: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		// Reset kembali r.Body agar bisa dibaca ulang jika dibutuhkan
-		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-
-		// Simpan body ke dalam context
-		ctx := context.WithValue(r.Context(), BodyKey, bodyBytes)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
 
 // ============================
 // Handler utama
@@ -100,6 +72,17 @@ func AdminHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 			hasil = serviceadmin.AmbilBukuRinci(db, req.ISBN, req.Jenis, req.Judul)
+
+		case "Hapus Child Buku":
+			fmt.Println("Hapus Child Buku Dijalankan")
+			var req serviceadmin.BukuBaruRequest
+			if gagal := json.Unmarshal(bb, &req); gagal != nil {
+				fmt.Println(gagal, "terjadi kesalahan")
+				http.Error(w, "Terjadi Kesalahan:"+gagal.Error(), http.StatusBadRequest)
+				return
+			}
+			hasil = serviceadmin.HapusChildBuku(db, req.ISBN, req.ID)
+
 		default:
 			http.Error(w, "Tujuan tidak dikenali: "+data.Tujuan, http.StatusBadRequest)
 			return

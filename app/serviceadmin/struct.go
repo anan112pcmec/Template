@@ -6,6 +6,7 @@ type RequestAdmin struct {
 	Tujuan string `json:"tujuan`
 }
 type BukuBaruRequest struct {
+	ID           string `json:"id"`
 	Tujuan       string `json:"tujuan"`
 	Judul        string `json:"judul"`
 	Jenis        string `json:"jenis"`
