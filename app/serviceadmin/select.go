@@ -6,6 +6,18 @@ import (
 	"gorm.io/gorm"
 )
 
+type User struct {
+	ID         uint   `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+	Nama       string `gorm:"column:nama;not null" json:"nama"`
+	Password   string `gorm:"column:password;not null" json:"password"`
+	Favorit    string `gorm:"column:favorit" json:"favorit,omitempty"`
+	KreditSkor int    `gorm:"column:kreditskor" json:"kreditskor,omitempty"`
+	Email      string `gorm:"column:Email" json:"email,omitempty"`
+	Alamat     string `gorm:"column:Alamat" json:"alamat,omitempty"`
+	Status     string `gorm:"column:Status" json:"status,omitempty"`
+	Bergabung  string `gorm:"column:Bergabung" json:"bergabung,omitempty"`
+}
+
 type BukuInduk struct {
 	ID         uint           `gorm:"primaryKey;autoIncrement"`
 	Judul      string         `gorm:"column:judul;type:varchar(255);not null"`

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/anan112pcmec/Template/app/serviceadmin"
+
 )
 
 // ============================
@@ -82,7 +83,19 @@ func AdminHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 			hasil = serviceadmin.HapusChildBuku(db, req.ISBN, req.ID)
+		case "AmbilDataUserAdmin":
+			fmt.Println("Mencoba Mengambil Data User Yang Ada")
+			hasil = serviceadmin.AmbilDataUsers(db)
 
+		case "AmbilDataUserRiwayatPeminjaman":
+			fmt.Println("AmbilDataRiwayatPeminjamanUser")
+			var req serviceadmin.UserRequest
+			if gagal := json.Unmarshal(bb, &req); gagal != nil {
+				fmt.Println(gagal, "terjadi kesalahan")
+				http.Error(w, "Terjadi Kesalahan:"+gagal.Error(), http.StatusBadRequest)
+				return
+			}
+			hasil = serviceadmin.AmbilDataRiwayatPeminjamanUser(db, req.Nama, req.Email)
 		default:
 			http.Error(w, "Tujuan tidak dikenali: "+data.Tujuan, http.StatusBadRequest)
 			return
