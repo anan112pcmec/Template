@@ -260,7 +260,6 @@ func blockBadRequestsMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Cek header tertentu (User-Agent, Referer, Cookie)
 		headersToCheck := []string{"User-Agent", "Referer", "Cookie"}
 		for _, h := range headersToCheck {
 			if checkPatterns(r.Header.Get(h)) {
@@ -270,10 +269,9 @@ func blockBadRequestsMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
-		// Cek body jika method POST/PUT/PATCH
 		if r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH" {
 			if r.Body != nil {
-				// Baca body tanpa menghilangkan data untuk handler selanjutnya
+
 				bodyBytes, err := io.ReadAll(r.Body)
 				if err == nil {
 					bodyStr := string(bodyBytes)
@@ -282,7 +280,7 @@ func blockBadRequestsMiddleware(next http.Handler) http.Handler {
 						http.Error(w, "Forbidden: Request mengandung pola berbahaya", http.StatusForbidden)
 						return
 					}
-					// Reset body agar bisa dibaca ulang oleh handler
+
 					r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 				}
 			}
@@ -351,6 +349,7 @@ func (server *Server) initialize(appconfig Appsetting) {
 	})
 
 	server.Router.Handle("/admin", middleware.BodyReaderMiddleware(middleware.AdminHandler(server.DB)))
+	server.Router.Handle("/auth", middleware.BodyReaderMiddleware(middleware.AdminHandler(server.DB)))
 	server.Router.Handle("/endpoint.go", middleware.GetHandler()).Methods("GET")
 	server.Router.HandleFunc("/ws", middleware.HandleWebSocket)
 

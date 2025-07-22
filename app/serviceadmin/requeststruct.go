@@ -3,7 +3,7 @@ package serviceadmin
 type RequestAdmin struct {
 	Id     string `json:"id"`
 	Nama   string `json:"nama"`
-	Tujuan string `json:"tujuan`
+	Tujuan string `json:"tujuan"`
 }
 
 type UserRequest struct {
@@ -44,4 +44,8 @@ type Peminjamanbuku struct {
 	ISBN         string `gorm:"column:ISBN"`
 	Iduser       int64  `gorm:"column:iduser"`
 	Namapeminjam string `gorm:"column:namapeminjam"`
+}
+
+type KontrolPeminjamanBuku struct {
+	Search string `json:"searchuntuk"`
 }

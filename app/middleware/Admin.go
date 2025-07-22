@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/anan112pcmec/Template/app/serviceadmin"
-
 )
 
 // ============================
@@ -96,6 +95,17 @@ func AdminHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 			hasil = serviceadmin.AmbilDataRiwayatPeminjamanUser(db, req.Nama, req.Email)
+
+		case "AmbilDataPeminjaman":
+			fmt.Println("Menjalankan AmbilDataPeminjaman")
+			var req serviceadmin.KontrolPeminjamanBuku
+			if gagal := json.Unmarshal(bb, &req); gagal != nil {
+				fmt.Println(gagal, "terjadi kesalahan")
+				http.Error(w, "Terjadi Kesalahan:"+gagal.Error(), http.StatusBadRequest)
+				return
+			}
+			hasil = serviceadmin.AmbilBukuDipinjam(db, req.Search)
+
 		default:
 			http.Error(w, "Tujuan tidak dikenali: "+data.Tujuan, http.StatusBadRequest)
 			return
