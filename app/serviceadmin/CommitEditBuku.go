@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"github.com/anan112pcmec/Template/app/backend/models"
 )
 
 func CommitEditBuku(db *gorm.DB, data *BukuBaruRequest) string {
@@ -15,7 +17,7 @@ func CommitEditBuku(db *gorm.DB, data *BukuBaruRequest) string {
 	fmt.Printf("Data diterima: %+v\n", data)
 
 	// Cari buku dari tabel buku_induks berdasarkan ISBN
-	var buku BukuInduk
+	var buku models.BukuInduk
 	fmt.Println("Mencari buku dengan ISBN:", data.ISBN)
 	if err := db.Unscoped().Table("buku_induks").Where("isbn = ?", data.ISBN).First(&buku).Error; err != nil {
 		fmt.Println("⛔ Buku tidak ditemukan:", err)

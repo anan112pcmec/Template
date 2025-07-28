@@ -7,16 +7,16 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/anan112pcmec/Template/app/authway"
+	"github.com/anan112pcmec/Template/app/serviceuser"
 )
 
-func AuthHandle(db *gorm.DB) http.HandlerFunc {
+func UserHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		bodyBytes := r.Context().Value(BodyKey)
 
 		fmt.Println(bodyBytes)
 		if bodyBytes == nil {
-			http.Error(w, "Body tidak ditemukan di context", http.StatusBadRequest)
+			http.Error(w, "Body Tidak Ada", http.StatusBadRequest)
 			return
 		}
 
@@ -26,7 +26,7 @@ func AuthHandle(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		var data authway.Purpose
+		var data serviceuser.RequestUser
 		if err := json.Unmarshal(bb, &data); err != nil {
 			http.Error(w, "Gagal parsing JSON RequestAdmin: "+err.Error(), http.StatusBadRequest)
 			return
@@ -35,21 +35,19 @@ func AuthHandle(db *gorm.DB) http.HandlerFunc {
 		var hasil any
 
 		switch data.Tujuan {
-		case "login":
-			var req authway.UserRequestnyo
-			if err := json.Unmarshal(bb, &req); err != nil {
-				fmt.Println(err)
-				http.Error(w, "Gagal parsing JSON BukuBaruRequest: "+err.Error(), http.StatusBadRequest)
-				return
-			}
-			hasil = authway.Login(db, req.Nama, req.Password)
+		case "AmbilDataBukuView":
+			fmt.Println("AmbilDataBukuViewDijalankan")
+			hasil = serviceuser.AmbilDataBukuView(db, data.Berdasarkan)
+		default:
+			http.Error(w, "Tujuan tidak dikenali: "+data.Tujuan, http.StatusBadRequest)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Data POST diproses di middleware",
-			"tujuan":  data.Tujuan,
-			"Hasil":   hasil,
+			"message":   "Data POST diproses di middleware",
+			"tujuan":    data.Tujuan,
+			"HasilUser": hasil,
 		})
 	}
 }

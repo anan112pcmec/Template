@@ -4,13 +4,15 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+
+	"github.com/anan112pcmec/Template/app/backend/models"
 )
 
 func AmbilBukuRinci(db *gorm.DB, ISBN, jenis, judul string) []map[string]interface{} {
 	var hasil []map[string]interface{}
 
 	rows, err := db.Unscoped().
-		Model(&BukuChild{}).
+		Model(&models.BukuChild{}).
 		Where("isbn = ? AND jenis = ? AND judul = ?", ISBN, jenis, judul).
 		Rows()
 	if err != nil {

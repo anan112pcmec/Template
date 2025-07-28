@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"golang.org/x/time/rate"
@@ -20,9 +21,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	routines "github.com/anan112pcmec/Template/app/backend/Routines"
 	"github.com/anan112pcmec/Template/app/middleware"
-	"github.com/anan112pcmec/Template/app/serviceadmin"
-
 )
 
 type Server struct {
@@ -195,6 +195,28 @@ func rateLimitMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+var jwtSecret = []byte("rahasia_kamu_ganti_in_production")
+
+type JWTClaims struct {
+	UserID uint   `json:"user_id"`
+	Nama   string `json:"nama"`
+	jwt.RegisteredClaims
+}
+
+func GenerateToken(userID uint, nama string) (string, error) {
+	claims := JWTClaims{
+		UserID: userID,
+		Nama:   nama,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)), // token expired 2 jam
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtSecret)
+}
+
 // Fungsi cek apakah IP sedang diblokir
 
 // Fungsi untuk blokir IP selama durasi tertentu
@@ -292,9 +314,7 @@ func blockBadRequestsMiddleware(next http.Handler) http.Handler {
 
 func (server *Server) initialize(appconfig Appsetting) {
 	fmt.Println("Inisialisasi server:", appconfig.AppName)
-
 	server.Router = mux.NewRouter()
-
 	server.Router.Use(blockBadRequestsMiddleware)
 	server.Router.Use(enableCORS)
 	server.Router.Use(rateLimitMiddleware)
@@ -330,26 +350,15 @@ func (server *Server) initialize(appconfig Appsetting) {
 	server.DB.Raw("SELECT current_database();").Scan(&currentDB)
 	fmt.Println("Database yang sedang digunakan:", currentDB)
 
-	err = server.DB.AutoMigrate(&serviceadmin.BukuInduk{}) // sesuaikan dengan path struct kamu
-	if err != nil {
-		log.Fatalf("Gagal migrasi BukuInduk: %v", err)
-	} else {
-		fmt.Println("Migrasi BukuInduk berhasil")
-	}
-
-	err1 := server.DB.AutoMigrate(&serviceadmin.BukuChild{}) // sesuaikan dengan path struct kamu
-	if err1 != nil {
-		log.Fatalf("Gagal migrasi BukuInduk: %v", err1)
-	} else {
-		fmt.Println("Migrasi BukuInduk berhasil")
-	}
+	go routines.UpDatabase(server.DB)
 
 	server.Router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Halo dari " + appconfig.AppName))
 	})
 
 	server.Router.Handle("/admin", middleware.BodyReaderMiddleware(middleware.AdminHandler(server.DB)))
-	server.Router.Handle("/auth", middleware.BodyReaderMiddleware(middleware.AdminHandler(server.DB)))
+	server.Router.Handle("/user", middleware.BodyReaderMiddleware(middleware.UserHandler(server.DB)))
+	server.Router.Handle("/auth", middleware.BodyReaderMiddleware(middleware.AuthHandle(server.DB)))
 	server.Router.Handle("/endpoint.go", middleware.GetHandler()).Methods("GET")
 	server.Router.HandleFunc("/ws", middleware.HandleWebSocket)
 

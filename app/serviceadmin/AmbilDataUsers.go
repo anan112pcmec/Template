@@ -4,11 +4,14 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+
+	"github.com/anan112pcmec/Template/app/backend/models"
+
 )
 
 func AmbilDataUsers(db *gorm.DB) []map[string]interface{} {
 
-	var Users []User
+	var Users []models.User
 	var hasilnya []map[string]interface{}
 
 	if err := db.Unscoped().Table("users").Find(&Users).Error; err != nil {

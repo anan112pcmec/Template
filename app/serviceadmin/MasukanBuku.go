@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"github.com/anan112pcmec/Template/app/backend/models"
 )
 
 // Fungsi untuk input dan migrasi otomatis
@@ -23,7 +25,7 @@ func MasukanBuku(db *gorm.DB, data *BukuBaruRequest) string {
 	fmt.Println("Ini dari service Masukan Buku attempt ke-", data.Bahasa, data.Harga, data.Judul)
 
 	// Auto migrate tabel
-	if err := db.AutoMigrate(&BukuInduk{}); err != nil {
+	if err := db.AutoMigrate(&models.BukuInduk{}); err != nil {
 		return "Gagal auto-migrasi tabel BukuInduk: " + err.Error()
 	}
 
@@ -47,7 +49,7 @@ func MasukanBuku(db *gorm.DB, data *BukuBaruRequest) string {
 
 	IdInduk := randomSixDigit()
 
-	buku := BukuInduk{
+	buku := models.BukuInduk{
 		ID:        uint(IdInduk),
 		Judul:     data.Judul,
 		Jenis:     data.Jenis,
@@ -66,56 +68,60 @@ func MasukanBuku(db *gorm.DB, data *BukuBaruRequest) string {
 	}
 
 	var isbnConfirm int64 = 0
-	err1 := db.Select("isbn").Where("isbn = ?", buku.ISBN).First(&isbnConfirm).Error
 
-	if err1 != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		fmt.Println("Ada kesalahan pada verifikasi data, akan retry.")
-		// Tambahkan retry logic di sini jika diperlukan
-	}
-
-	if isbnConfirm != 0 {
-		return "Buku dengan ISBN ini sudah ada di DB. Input buku lain."
-	}
-
-	// Simpan ke DB
-	if err := db.Create(&buku).Error; err != nil {
-		return "Gagal menyimpan Buku ISBN Buku Ini Telah Digunakan Buku Lain Dan tak mungkin Valid"
-	}
-
-	var idConfirm int64
-	err2 := db.Select("id").Where("ISBN = ?", buku.ISBN).First(idConfirm).Error
-	if err2 != nil {
-		fmt.Println("Ada kesalahan pada verifikasi data, akan retry. Attempt ke:")
-
-		// Hapus data berdasarkan isbn yang dikirim
-		if delErr := db.Where("isbn = ?", data.ISBN).Delete(&BukuInduk{}).Error; delErr != nil {
-			fmt.Println("Gagal hapus data saat retry:", delErr.Error())
+	Transaction := db.Transaction(func(tx *gorm.DB) error {
+		err1 := tx.Model(&models.BukuInduk{}).Select("isbn").Where("isbn = ?", buku.ISBN).Scan(&isbnConfirm).Error
+		if err1 != nil && !errors.Is(err1, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("gagal verifikasi ISBN: %w", err1)
 		}
-	}
-	for i := 0; i < Stokfinal; i++ {
-		bukuChild := BukuChild{
-			ID:        uint(randomSixDigit()),
-			KodeInduk: uint(idConfirm),
-			Judul:     data.Judul,
-			Jenis:     data.Jenis,
-			Harga:     int64(hargafinal),
-			Penulis:   data.Penulis,
-			Penerbit:  data.Penerbit,
-			Stok:      int64(Stokfinal),
-			Tahun:     data.Tahun,
-			ISBN:      data.ISBN,
-			Kategori:  data.Kategori,
-			Bahasa:    data.Bahasa,
-			Status:    "Ready",
-			Deskripsi: data.Deskripsi,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+		if isbnConfirm != 0 {
+			return fmt.Errorf("buku dengan ISBN ini sudah ada di DB")
 		}
 
-		if err := db.Create(&bukuChild).Error; err != nil {
-			return "Gagal menyimpan buku: " + err.Error()
+		// Simpan BukuInduk
+		if err := tx.Create(&buku).Error; err != nil {
+			return fmt.Errorf("gagal menyimpan BukuInduk: %w", err)
 		}
 
+		// Ambil ID induk untuk BukuChild
+		var idConfirm uint
+		err2 := tx.Model(&models.BukuInduk{}).Select("id").Where("isbn = ?", buku.ISBN).Scan(&idConfirm).Error
+		if err2 != nil {
+			// Rollback eksplisit dengan menghapus yang sudah dimasukkan (opsional karena transaksi akan rollback juga)
+			_ = tx.Where("isbn = ?", buku.ISBN).Delete(&models.BukuInduk{})
+			return fmt.Errorf("gagal verifikasi ID induk: %w", err2)
+		}
+
+		// Buat BukuChild sebanyak stok
+		for i := 0; i < Stokfinal; i++ {
+			bukuChild := models.BukuChild{
+				ID:        uint(randomSixDigit()),
+				KodeInduk: idConfirm,
+				Judul:     data.Judul,
+				Jenis:     data.Jenis,
+				Harga:     int64(hargafinal),
+				Penulis:   data.Penulis,
+				Penerbit:  data.Penerbit,
+				Stok:      int64(Stokfinal),
+				Tahun:     data.Tahun,
+				ISBN:      data.ISBN,
+				Kategori:  data.Kategori,
+				Bahasa:    data.Bahasa,
+				Status:    "Ready",
+				Deskripsi: data.Deskripsi,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+
+			if err := tx.Create(&bukuChild).Error; err != nil {
+				return fmt.Errorf("gagal menyimpan BukuChild ke-%d: %w", i+1, err)
+			}
+		}
+		return nil // sukses, akan di-commit
+	})
+
+	if Transaction != nil {
+		return "Terjadi kesalahan: " + err.Error()
 	}
 
 	return "Data Buku " + data.Judul + " Berhasil Dimasukan"

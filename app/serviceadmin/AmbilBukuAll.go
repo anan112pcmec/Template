@@ -6,10 +6,11 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/anan112pcmec/Template/app/backend/models"
 )
 
 func AmbilBukuAll(db *gorm.DB) []map[string]interface{} {
-	var bukuList []BukuInduk
+	var bukuList []models.BukuInduk
 	var hasil []map[string]interface{}
 
 	// Ambil semua data dari tabel buku_induks

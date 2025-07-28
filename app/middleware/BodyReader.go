@@ -19,7 +19,6 @@ func BodyReaderMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Reset kembali r.Body agar bisa dibaca ulang jika dibutuhkan
 		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
 		// Simpan body ke dalam context

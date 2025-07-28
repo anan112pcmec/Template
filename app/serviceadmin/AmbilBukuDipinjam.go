@@ -5,10 +5,12 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+
+	"github.com/anan112pcmec/Template/app/backend/models"
 )
 
 func AmbilBukuDipinjam(db *gorm.DB, Dicari string) []map[string]interface{} {
-	var bukuList []BukuChild
+	var bukuList []models.BukuChild
 	var hasil []map[string]interface{}
 
 	// Ambil semua buku dengan status 'dipinjam'

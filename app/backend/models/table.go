@@ -1,4 +1,4 @@
-package serviceadmin
+package models
 
 import (
 	"time"
@@ -16,6 +16,10 @@ type User struct {
 	Alamat     string `gorm:"column:Alamat" json:"alamat,omitempty"`
 	Status     string `gorm:"column:Status" json:"status,omitempty"`
 	Bergabung  string `gorm:"column:Bergabung" json:"bergabung,omitempty"`
+}
+
+func (User) TableName() string {
+	return "users"
 }
 
 type BukuInduk struct {
@@ -36,6 +40,12 @@ type BukuInduk struct {
 	CreatedAt  time.Time      `gorm:"column:created_at"`
 	UpdatedAt  time.Time      `gorm:"column:updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
+	Rating     float64        `gorm:"column:rating;not null"`
+	Viewed     int64          `gorm:"column:viewed;not null"`
+}
+
+func (BukuInduk) TableName() string {
+	return "buku_induks"
 }
 
 type BukuChild struct {
@@ -56,4 +66,26 @@ type BukuChild struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+func (BukuChild) Tablename() string {
+	return "buku_children"
+}
+
+type PeminjamanBuku struct {
+	ID           int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	Judul        string `gorm:"type:varchar(250);null" json:"judul"`
+	Tanggal      string `gorm:"type:varchar(250);null" json:"tanggal"`
+	Kategori     string `gorm:"type:varchar(250);null" json:"kategori"`
+	Status       string `gorm:"type:varchar(250);null" json:"status"`
+	KodeBuku     int64  `gorm:"null" json:"kodebuku"`
+	ISBN         string `gorm:"type:varchar(250);null" json:"isbn"`
+	IDUser       int64  `gorm:"null" json:"iduser"`
+	NamaPeminjam string `gorm:"type:varchar(250);null" json:"namapeminjam"`
+	Sampai       string `gorm:"type:varchar(250);null" json:"sampai"`
+}
+
+// Supaya nama tabel di DB tetap 'peminjamanbuku'
+func (PeminjamanBuku) TableName() string {
+	return "peminjamanbuku"
 }
