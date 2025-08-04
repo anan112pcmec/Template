@@ -4,23 +4,18 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+
+	"github.com/anan112pcmec/Template/app/backend/models"
 )
 
-type User struct {
-	ID         string `gorm:"primaryKey"`
-	Nama       string
-	Password   string
-	KreditSkor int8 `gorm:"column:kreditskor"`
-}
-
-func Login(db *gorm.DB, nama, password string) map[string]string {
-	var user User
+func Login(db *gorm.DB, nama, password string) map[string]interface{} {
+	var user models.User
 
 	result := db.Where("nama = ? AND password = ?", nama, password).First(&user)
 
 	if result.Error != nil {
 		fmt.Println("Login gagal:", result.Error)
-		return map[string]string{
+		return map[string]interface{}{
 			"status":  "false",
 			"message": "Nama atau password salah",
 		}
@@ -28,12 +23,13 @@ func Login(db *gorm.DB, nama, password string) map[string]string {
 
 	fmt.Println("Login berhasil:", user)
 
-	return map[string]string{
+	return map[string]interface{}{
 		"status":     "true",
 		"message":    "Login berhasil",
 		"Nama":       user.Nama,
 		"Password":   user.Password,
 		"ID":         user.ID,
+		"Favorit":    user.GenreDisukai,
 		"KreditSkor": fmt.Sprintf("%d", user.KreditSkor),
 	}
 }

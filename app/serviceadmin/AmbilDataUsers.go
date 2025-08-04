@@ -6,7 +6,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/anan112pcmec/Template/app/backend/models"
-
 )
 
 func AmbilDataUsers(db *gorm.DB) []map[string]interface{} {

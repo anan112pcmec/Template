@@ -7,15 +7,16 @@ import (
 )
 
 type User struct {
-	ID         uint   `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	Nama       string `gorm:"column:nama;not null" json:"nama"`
-	Password   string `gorm:"column:password;not null" json:"password"`
-	Favorit    string `gorm:"column:favorit" json:"favorit,omitempty"`
-	KreditSkor int    `gorm:"column:kreditskor" json:"kreditskor,omitempty"`
-	Email      string `gorm:"column:Email" json:"email,omitempty"`
-	Alamat     string `gorm:"column:Alamat" json:"alamat,omitempty"`
-	Status     string `gorm:"column:Status" json:"status,omitempty"`
-	Bergabung  string `gorm:"column:Bergabung" json:"bergabung,omitempty"`
+	ID           uint   `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+	Nama         string `gorm:"column:nama;not null" json:"nama"`
+	Password     string `gorm:"column:password;not null" json:"password"`
+	Favorit      string `gorm:"column:favorit" json:"favorit,omitempty"`
+	KreditSkor   int    `gorm:"column:kreditskor" json:"kreditskor,omitempty"`
+	Email        string `gorm:"column:Email" json:"email,omitempty"`
+	Alamat       string `gorm:"column:Alamat" json:"alamat,omitempty"`
+	Status       string `gorm:"column:Status" json:"status,omitempty"`
+	Bergabung    string `gorm:"column:Bergabung" json:"bergabung,omitempty"`
+	GenreDisukai string `gorm:"column:genre_disukai" json:"genre_disukai"`
 }
 
 func (User) TableName() string {
@@ -37,6 +38,7 @@ type BukuInduk struct {
 	Deskripsi  string         `gorm:"column:deskripsi;type:text"`
 	TujuanAksi string         `gorm:"column:tujuan_aksi;type:varchar(100)"`
 	Gambar     []byte         `gorm:"column:gambar;type:bytea"`
+	Diskon     float64        `gorm:"column:diskon;type:float8;"`
 	CreatedAt  time.Time      `gorm:"column:created_at"`
 	UpdatedAt  time.Time      `gorm:"column:updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
