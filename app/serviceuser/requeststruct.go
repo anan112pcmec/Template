@@ -6,4 +6,8 @@ type RequestUser struct {
 	BukanBuku   []string `json:"bukanbuku"`
 	Pencarian   string   `json:"pencarian"`
 	Favorit     []string `json:"favoritnya"`
+	IdUser      string   `json:"iduser"`
+	NamaBuku    string   `json:"namabuku"`
+	ISBnBuku    string   `json:"isbn"`
+	NamaUser    string   `json:"namauser"`
 }

@@ -50,6 +50,17 @@ func (BukuInduk) TableName() string {
 	return "buku_induks"
 }
 
+type Favorit struct {
+	Id_User   int64  `gorm:"column:iduser;type:int4"`
+	JudulBuku string `gorm:"column:judul_buku;type:varchar(250)"`
+	NamaUser  string `gorm:"column:nama_user;type:varchar(250)"`
+	ISBN      string `gorm:"column:isbn;type:varchar(50)"`
+}
+
+func (Favorit) Tablename() string {
+	return "favorits"
+}
+
 type BukuChild struct {
 	ID        uint   `gorm:"primaryKey;autoIncrement"`
 	KodeInduk uint   `gorm:"column:Kode_induk;not null"`

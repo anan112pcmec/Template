@@ -9,7 +9,7 @@ import (
 	"github.com/anan112pcmec/Template/app/backend/models"
 )
 
-func AmbilBukuScroll(db *gorm.DB, jangandiambil []string) []map[string]interface{} {
+func AmbilBukuScroll(db *gorm.DB, jangandiambil []string, iduser string) []map[string]interface{} {
 	var datanya []models.BukuInduk
 	var hasil []map[string]interface{}
 
@@ -49,6 +49,18 @@ func AmbilBukuScroll(db *gorm.DB, jangandiambil []string) []map[string]interface
 			"deskripsi": buku.Deskripsi,
 			"diskon":    buku.Diskon,
 		}
+
+		var favorit models.Favorit
+		query := db.Where("iduser = ? AND isbn = ?", iduser, buku.ISBN).Find(&favorit)
+
+		var favoritkah string
+		if query.RowsAffected > 0 {
+			favoritkah = "buku disukai"
+		} else {
+			favoritkah = "buku tidak disukai"
+		}
+
+		bukuMap["disukai"] = favoritkah
 
 		if len(buku.Gambar) > 0 {
 			bukuMap["gambar"] = "data:image/png;base64," + base64.StdEncoding.EncodeToString(buku.Gambar)

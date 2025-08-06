@@ -13,42 +13,39 @@ import (
 func UpDatabase(db *gorm.DB) {
 	var wg sync.WaitGroup
 
-	wg.Add(4)
+	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
+
+		if err := db.AutoMigrate(&models.User{}); err != nil {
+			log.Printf("Gagal migrasi Peminjaman: %v", err)
+		} else {
+			fmt.Println("Migrasi Peminjaman berhasil")
+		}
+
 		if err := db.AutoMigrate(&models.BukuInduk{}); err != nil {
 			log.Printf("Gagal migrasi BukuInduk: %v", err)
 		} else {
 			fmt.Println("Migrasi BukuInduk berhasil")
 		}
-	}()
 
-	// Migrasi BukuChild
-	go func() {
-		defer wg.Done()
 		if err := db.AutoMigrate(&models.BukuChild{}); err != nil {
 			log.Printf("Gagal migrasi BukuChild: %v", err)
 		} else {
 			fmt.Println("Migrasi BukuChild berhasil")
 		}
-	}()
 
-	go func() {
-		defer wg.Done()
-		if err := db.AutoMigrate(&models.User{}); err != nil {
-			log.Printf("Gagal migrasi User: %v", err)
-		} else {
-			fmt.Println("Migrasi User berhasil")
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
 		if err := db.AutoMigrate(&models.PeminjamanBuku{}); err != nil {
 			log.Printf("Gagal migrasi Peminjaman: %v", err)
 		} else {
-			fmt.Println("Migrasi Peminjamanberhasil")
+			fmt.Println("Migrasi Peminjaman berhasil")
+		}
+
+		if err := db.AutoMigrate(&models.Favorit{}); err != nil {
+			log.Printf("Gagal migrasi Favorit: %v", err)
+		} else {
+			fmt.Println("Migrasi Favorit berhasil")
 		}
 	}()
 

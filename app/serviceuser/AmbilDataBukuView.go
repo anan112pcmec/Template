@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/anan112pcmec/Template/app/backend/models"
-
 )
 
 func AmbilDataBukuView(db *gorm.DB, berdasar string) []map[string]interface{} {

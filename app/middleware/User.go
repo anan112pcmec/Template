@@ -34,18 +34,23 @@ func UserHandler(db *gorm.DB) http.HandlerFunc {
 
 		var hasil any
 
+		fmt.Println(data.IdUser, "iniawalan")
+
 		switch data.Tujuan {
 		case "AmbilDataBukuView":
 			fmt.Println("AmbilDataBukuViewDijalankan")
 			hasil = serviceuser.AmbilDataBukuView(db, data.Berdasarkan)
 		case "AmbilBukuScroll":
 			fmt.Println("AmbilBukuScrollDijalankan")
-			hasil = serviceuser.AmbilBukuScroll(db, data.BukanBuku)
+			hasil = serviceuser.AmbilBukuScroll(db, data.BukanBuku, data.IdUser)
 		case "AmbilDataBukuBerdasarkanPencarian":
 			fmt.Println("AmbilDataBukuBerdasarkanPencarian dijalankan")
-			hasil = serviceuser.AmbilDataBukuBerdasarkanPencarian(db, data.Pencarian)
+			hasil = serviceuser.AmbilDataBukuBerdasarkanPencarian(db, data.Pencarian, data.IdUser)
 		case "AmbilBukuFavorit":
-			hasil = serviceuser.AmbilBukuFavorit(db, data.Favorit)
+			fmt.Println("Pencegahan di case", data.IdUser, data.Favorit)
+			hasil = serviceuser.AmbilBukuGenreFav(db, data.Favorit, data.IdUser)
+		case "Favorit":
+			hasil = serviceuser.FavoritBuku(db, data.IdUser, data.ISBnBuku, data.NamaUser, data.NamaBuku)
 		default:
 			http.Error(w, "Tujuan tidak dikenali: "+data.Tujuan, http.StatusBadRequest)
 			return

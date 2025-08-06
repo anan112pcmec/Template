@@ -7,10 +7,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/anan112pcmec/Template/app/backend/models"
-
 )
 
-func AmbilDataBukuBerdasarkanPencarian(db *gorm.DB, Bukudicari string) []map[string]interface{} {
+func AmbilDataBukuBerdasarkanPencarian(db *gorm.DB, Bukudicari, iduser string) []map[string]interface{} {
 	var data []models.BukuInduk
 
 	fmt.Println("Nyoba nyari judul dulu buat pencarian")
@@ -48,6 +47,18 @@ func AmbilDataBukuBerdasarkanPencarian(db *gorm.DB, Bukudicari string) []map[str
 			"viewed":    buku.Viewed,
 			"diskon":    buku.Diskon,
 		}
+
+		var favorit models.Favorit
+		query := db.Where("iduser = ? AND isbn = ?", iduser, buku.ISBN).Find(&favorit)
+
+		var favoritkah string
+		if query.RowsAffected > 0 {
+			favoritkah = "buku disukai"
+		} else {
+			favoritkah = "buku tidak disukai"
+		}
+
+		bukuMap["disukai"] = favoritkah
 
 		if len(buku.Gambar) > 0 {
 			bukuMap["gambar"] = "data:image/png;base64," + base64.StdEncoding.EncodeToString(buku.Gambar)
