@@ -49,6 +49,9 @@ func UserHandler(db *gorm.DB) http.HandlerFunc {
 		case "AmbilBukuFavorit":
 			fmt.Println("Pencegahan di case", data.IdUser, data.Favorit)
 			hasil = serviceuser.AmbilBukuGenreFav(db, data.Favorit, data.IdUser)
+		case "AmbilBukuFavoritdia":
+			fmt.Println("AmbilBukuFavoritdia dijalankan")
+			hasil = serviceuser.AmbilBukuFavoritDia(db, data.NamaUser, data.IdUser)
 		case "Favorit":
 			hasil = serviceuser.FavoritBuku(db, data.IdUser, data.ISBnBuku, data.NamaUser, data.NamaBuku)
 		default:
