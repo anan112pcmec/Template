@@ -56,6 +56,8 @@ func UserHandler(db *gorm.DB) http.HandlerFunc {
 			hasil = serviceuser.FavoritBuku(db, data.IdUser, data.ISBnBuku, data.NamaUser, data.NamaBuku)
 		case "AmbilBukuBestSeller":
 			hasil = serviceuser.AmbilBukuBestSeller(db)
+		case "AmbilTopContributor":
+			hasil = serviceuser.AmbilTopContributor(db, data.JenisContributor)
 		default:
 			http.Error(w, "Tujuan tidak dikenali: "+data.Tujuan, http.StatusBadRequest)
 			return

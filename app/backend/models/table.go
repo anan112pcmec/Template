@@ -102,3 +102,20 @@ type PeminjamanBuku struct {
 func (PeminjamanBuku) TableName() string {
 	return "peminjamanbuku"
 }
+
+type Komentar struct {
+	ID          int     `gorm:"column:id;primaryKey;autoIncrement"`
+	IdUser      *int    `gorm:"column:id_user;type:int4"`          // pakai pointer supaya bisa null
+	Komentar    *string `gorm:"column:komentar;type:text"`         // pakai pointer supaya bisa null
+	NamaBuku    *string `gorm:"column:namabuku;type:varchar(250)"` // pakai pointer supaya bisa null
+	ISBN        *string `gorm:"column:isbn;type:varchar(250)"`     // pakai pointer supaya bisa null
+	NamaUser    *string `gorm:"column:namauser;type:varchar(250)"` // pakai pointer supaya bisa null
+	Bintang     *int    `gorm:"column:bintang"`                    // pakai pointer supaya bisa null
+	KepadaJenis string  `gorm:"column:kepada_jenis;type:varchar(250);not null"`
+	DalamJenis  *string `gorm:"column:dalam_jenis;type:varchar(250)"` // pakai pointer supaya bisa null
+}
+
+// TableName overrides the table name used by GORM
+func (Komentar) TableName() string {
+	return "komentar"
+}

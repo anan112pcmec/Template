@@ -47,6 +47,12 @@ func UpDatabase(db *gorm.DB) {
 		} else {
 			fmt.Println("Migrasi Favorit berhasil")
 		}
+
+		if err := db.AutoMigrate(&models.Komentar{}); err != nil {
+			log.Printf("Gagal migrasi Komentar: %v", err)
+		} else {
+			fmt.Println("Migrasi Komentar berhasil")
+		}
 	}()
 
 	wg.Wait()
