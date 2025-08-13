@@ -2,6 +2,7 @@ package serviceadmin
 
 import (
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -51,6 +52,31 @@ func AmbilBukuRinci(db *gorm.DB, ISBN, jenis, judul string) []map[string]interfa
 		nomor++
 
 		hasil = append(hasil, rowMap)
+	}
+
+	// Kalau hasil kosong, kembalikan dummy data
+	if len(hasil) == 0 {
+		dummy := map[string]interface{}{
+			"ID":         0,
+			"Kode_induk": 0,
+			"Judul":      "Dummy Judul",
+			"Jenis":      "Dummy Jenis",
+			"Harga":      int64(0),
+			"Penulis":    "Dummy Penulis",
+			"Penerbit":   "Dummy Penerbit",
+			"Stok":       int64(0),
+			"Tahun":      "0000",
+			"ISBN":       "0000000000",
+			"Kategori":   "Dummy Kategori",
+			"Bahasa":     "Dummy Bahasa",
+			"Status":     "Dummy Status",
+			"Deskripsi":  "Dummy Deskripsi",
+			"CreatedAt":  time.Now(),
+			"UpdatedAt":  time.Now(),
+			"DeletedAt":  nil,
+			"nomor":      1,
+		}
+		hasil = append(hasil, dummy)
 	}
 
 	return hasil

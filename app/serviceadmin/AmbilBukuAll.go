@@ -3,6 +3,7 @@ package serviceadmin
 import (
 	"encoding/base64"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -40,11 +41,41 @@ func AmbilBukuAll(db *gorm.DB) []map[string]interface{} {
 			"Deskripsi":  buku.Deskripsi,
 			"TujuanAksi": buku.TujuanAksi,
 			"Gambar":     gambarBase64,
+			"Diskon":     buku.Diskon,
 			"CreatedAt":  buku.CreatedAt,
 			"UpdatedAt":  buku.UpdatedAt,
+			"Rating":     buku.Rating,
+			"Viewed":     buku.Viewed,
 		}
 
 		hasil = append(hasil, item)
+	}
+
+	// Kalau kosong, buat 2 dummy data
+	if len(hasil) == 0 {
+		for i := 1; i <= 2; i++ {
+			dummy := map[string]interface{}{
+				"Judul":      fmt.Sprintf("Dummy Judul %d", i),
+				"Jenis":      "Dummy Jenis",
+				"Harga":      int64(0),
+				"Penulis":    "Dummy Penulis",
+				"Penerbit":   "Dummy Penerbit",
+				"Stok":       int64(0),
+				"Tahun":      "0000",
+				"ISBN":       fmt.Sprintf("000000000%d", i),
+				"Kategori":   "Dummy Kategori",
+				"Bahasa":     "Dummy Bahasa",
+				"Deskripsi":  "Dummy Deskripsi",
+				"TujuanAksi": "Dummy Tujuan",
+				"Gambar":     "",
+				"Diskon":     float64(0),
+				"CreatedAt":  time.Now(),
+				"UpdatedAt":  time.Now(),
+				"Rating":     float64(0),
+				"Viewed":     int64(0),
+			}
+			hasil = append(hasil, dummy)
+		}
 	}
 
 	return hasil
