@@ -119,3 +119,15 @@ type Komentar struct {
 func (Komentar) TableName() string {
 	return "komentar"
 }
+
+type Keranjang struct {
+	ID     int64   `gorm:"column:id;primaryKey;autoIncrement"`
+	IDUser int64   `gorm:"column:id_user"`                // nullable
+	IDBuku int64   `gorm:"column:id_buku"`                // nullable
+	ISBN   *string `gorm:"column:ISBN;type:varchar(250)"` // nullable
+}
+
+// TableName overrides the table name used by GORM
+func (Keranjang) TableName() string {
+	return "keranjang"
+}

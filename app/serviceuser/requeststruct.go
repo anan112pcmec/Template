@@ -11,4 +11,5 @@ type RequestUser struct {
 	ISBnBuku         string   `json:"isbn"`
 	NamaUser         string   `json:"namauser"`
 	JenisContributor string   `json:"jeniskontributor"`
+	IdBuku           string   `json:"idbuku"`
 }
